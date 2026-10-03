@@ -9,40 +9,39 @@
     <!-- html2pdf.js CDN (HTML 轉 PDF 核心庫) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        /* 引入 Google 官方繁體楷體 (霞鶩文楷 / 標楷體最佳替代方案) */
+        /* 引入 Google 官方高解析度繁體楷體 (標楷體雲端標準字型) */
         @import url('https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&display=swap');
 
-        /* 萬用字元設定：強制 PDF 範本內所有文字與符號均使用標楷體 */
-        #pdfRenderTemplate, #pdfRenderTemplate * {
+        /* 全域設定：強制 PDF 範本內所有文字均使用標楷體 */
+        .a4-container, .a4-container * {
             font-family: "LXGW WenKai TC", "DFKai-SB", "標楷體", "BiauKai", serif !important;
             box-sizing: border-box;
         }
 
-        /* 嚴格鎖定 A4 單頁尺寸 (210mm x 295mm)，防溢頁與裁切 */
-        .a4-template {
+        /* 嚴格鎖定 A4 單頁規格 (210mm x 297mm)，徹底防止溢頁 */
+        .a4-container {
             width: 210mm;
-            height: 295mm;
+            height: 297mm;
             padding: 12mm 15mm;
             background: #ffffff;
             color: #000000;
-            font-size: 13pt;
-            line-height: 1.5;
             box-sizing: border-box;
             overflow: hidden;
             margin: 0 auto;
         }
 
-        /* 主表格樣式 */
-        .main-pdf-table {
+        /* 主表格樣式 (實線黑框) */
+        .pdf-main-table {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            border: 1px solid #000000;
+            border: 1.5px solid #000000;
         }
 
-        .main-pdf-table td {
-            border: 1px solid #000000;
+        .pdf-main-table td {
+            border: 1.5px solid #000000;
             vertical-align: top;
+            padding: 6px 8px;
             word-break: break-all;
         }
 
@@ -51,32 +50,33 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 4px;
-            font-size: 12pt;
+            font-size: 11pt;
+            line-height: 1.5;
         }
 
-        /* 標題與內文區塊 */
-        .section-title {
+        /* 標題與內文排版 */
+        .section-header {
             font-weight: bold;
-            font-size: 13pt;
+            font-size: 12pt;
             margin-bottom: 4px;
         }
 
-        .section-text {
+        .section-content {
             white-space: pre-wrap;
-            font-size: 12pt;
-            line-height: 1.6;
+            font-size: 11pt;
+            line-height: 1.5;
         }
     </style>
 </head>
 <body class="bg-sky-100 min-h-screen pb-10">
 
-    <!-- 手機端操作介面 (畫面一) -->
+    <!-- 手機端操作介面 -->
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-md p-4 flex flex-col gap-4">
         
         <!-- 標題欄 -->
         <div class="border-b-2 border-sky-600 pb-2">
             <h1 class="text-2xl font-bold text-sky-900 text-center">
-                速報單填報系統 <span class="text-xs font-normal text-emerald-600 border border-emerald-500 rounded px-1">v3.0-PerfectA4</span>
+                速報單填報系統 <span class="text-xs font-normal text-emerald-600 border border-emerald-500 rounded px-1">v3.2-ExactA4</span>
             </h1>
         </div>
 
@@ -100,11 +100,11 @@
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label class="block font-bold text-gray-700 mb-1">交辦長官</label>
-                    <input type="text" id="supervisor" class="w-full border rounded-lg p-2 bg-gray-50" placeholder="例如：陳副總工程司春宏">
+                    <input type="text" id="supervisor" class="w-full border rounded-lg p-2 bg-gray-50" value="陳副總工程司春宏">
                 </div>
                 <div>
                     <label class="block font-bold text-gray-700 mb-1">陳報單位</label>
-                    <input type="text" id="reportingUnit" class="w-full border rounded-lg p-2 bg-gray-50" value="河川海岸組">
+                    <input type="text" id="reportingUnit" class="w-full border rounded-lg p-2 bg-gray-50" value="土地管理組">
                 </div>
             </div>
 
@@ -123,22 +123,23 @@
             <!-- 壹、案由 -->
             <div>
                 <label class="block font-bold text-gray-700 mb-1">壹、案由</label>
-                <textarea id="section1" rows="4" class="w-full border rounded-lg p-2 bg-gray-50 text-sm">一、開會時間：
-二、開會地點：
-三、主持人：
-四、與會人員：</textarea>
+                <textarea id="section1" rows="4" class="w-full border rounded-lg p-2 bg-gray-50 text-sm">一、開會時間：115年9月17日(四)下午15:30
+二、開會地點：立法委員伍麗華國會辦公室
+三、主持人：曾巧忻主任
+四、與會人員：行政院公共工程委員會洪簡任技正彥斌、水利署陳副總工程司春宏、梁科長顥懷、第九河川分署李科長秀芳、莊聘用工程司宇</textarea>
             </div>
 
             <!-- 貳、重點說明暨續辦摘要 -->
             <div>
                 <label class="block font-bold text-gray-700 mb-1">貳、重點說明暨續辦摘要</label>
-                <textarea id="section2" rows="5" class="w-full border rounded-lg p-2 bg-gray-50 text-sm" placeholder="請輸入重點內容..."></textarea>
+                <textarea id="section2" rows="5" class="w-full border rounded-lg p-2 bg-gray-50 text-sm">一、香草場所在土地在馬太鞍事件時雖未淹水，但目前本署規劃之第二道防線為治理需求仍有其必要性。
+二、本署暨九河分署辦理用地取得後，在地相關民眾居住權及相關權益應給予保障；例如申辦原保地增劃編程序者仍能繼續，或協助申請中繼屋、安排以地易地方式。</textarea>
             </div>
 
             <!-- 參、擬處理意見或建議事項 -->
             <div>
                 <label class="block font-bold text-gray-700 mb-1">參、擬處理意見或建議事項</label>
-                <textarea id="section3" rows="4" class="w-full border rounded-lg p-2 bg-gray-50 text-sm" placeholder="請輸入擬處理意見..."></textarea>
+                <textarea id="section3" rows="4" class="w-full border rounded-lg p-2 bg-gray-50 text-sm">請工程會依據會議決議協助香草場居民就工程範圍外土地，專案洽原民會申請增劃編原住民保留地。</textarea>
             </div>
 
             <!-- 本件分送單位 -->
@@ -148,13 +149,13 @@
                     <label class="flex items-center gap-1"><input type="checkbox" name="dispatchUnit" value="署長辦公室"> 署長室</label>
                     <label class="flex items-center gap-1"><input type="checkbox" name="dispatchUnit" value="王副署長辦公室"> 王副室</label>
                     <label class="flex items-center gap-1"><input type="checkbox" name="dispatchUnit" value="黃副署長辦公室"> 黃副室</label>
-                    <label class="flex items-center gap-1"><input type="checkbox" name="dispatchUnit" value="陳副署長辦公室"> 陳副室</label>
-                    <label class="flex items-center gap-1"><input type="checkbox" name="dispatchUnit" value="總工程司室"> 總工程室</label>
-                    <label class="flex items-center gap-1"><input type="checkbox" name="dispatchUnit" value="主任秘書室"> 主秘室</label>
+                    <label class="flex items-center gap-1"><input type="checkbox" name="dispatchUnit" value="陳副署長辦公室" checked> 陳副室</label>
+                    <label class="flex items-center gap-1"><input type="checkbox" name="dispatchUnit" value="總工程司室" checked> 總工程室</label>
+                    <label class="flex items-center gap-1"><input type="checkbox" name="dispatchUnit" value="主任秘書室" checked> 主秘室</label>
                 </div>
                 <div class="mt-2 flex items-center gap-2">
                     <span class="text-sm font-bold text-gray-700">其他單位:</span>
-                    <input type="text" id="otherUnit" class="flex-1 border rounded-lg p-1.5 bg-gray-50 text-sm" placeholder="例如：河川海岸組、國會組">
+                    <input type="text" id="otherUnit" class="flex-1 border rounded-lg p-1.5 bg-gray-50 text-sm" value="河川海岸組、國會組">
                 </div>
             </div>
 
@@ -162,11 +163,11 @@
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label class="block font-bold text-gray-700 mb-1">本案聯絡人</label>
-                    <input type="text" id="contactPerson" class="w-full border rounded-lg p-2 bg-gray-50 text-sm" placeholder="土地管理組/科長/梁顥懷">
+                    <input type="text" id="contactPerson" class="w-full border rounded-lg p-2 bg-gray-50 text-sm" value="土地管理組/科長/梁顥懷">
                 </div>
                 <div>
                     <label class="block font-bold text-gray-700 mb-1">聯絡電話</label>
-                    <input type="text" id="contactPhone" class="w-full border rounded-lg p-2 bg-gray-50 text-sm" placeholder="0928284556">
+                    <input type="text" id="contactPhone" class="w-full border rounded-lg p-2 bg-gray-50 text-sm" value="0928284556">
                 </div>
             </div>
 
@@ -188,69 +189,78 @@
         </form>
     </div>
 
-    <!-- PDF 暫存渲染區塊 (預設隱藏) -->
-    <div id="pdfRenderContainer" style="position: absolute; left: -9999px; top: -9999px;">
-        <div id="pdfRenderTemplate" class="a4-template">
-            <!-- 頂部欄位 -->
-            <div style="font-size: 16pt; font-weight: bold; margin-bottom: 2px;">經濟部水利署</div>
+    <!-- 離屏渲染 A4 PDF 範本 (完全復刻水利署速報單 1:1 格式) -->
+    <div style="position: absolute; left: -9999px; top: 0;">
+        <div id="pdfRenderTemplate" class="a4-container">
             
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <div style="font-size: 12pt;">交辦長官：<span id="pdf_supervisor"></span></div>
-                <div style="font-size: 18pt; font-weight: bold; border: 1.5px solid #000; padding: 2px 12px; letter-spacing: 2px;">
-                    辦理現況速報單
-                </div>
-                <div style="font-size: 12pt;">陳報單位：<span id="pdf_reportingUnit"></span></div>
+            <!-- 頂部標題區域 -->
+            <div style="text-align: center; font-size: 16pt; font-weight: bold; letter-spacing: 2px; margin-bottom: 2px;">
+                經濟部水利署
             </div>
 
-            <div style="display: flex; justify-content: space-between; font-size: 12pt; margin-bottom: 8px;">
-                <div>交辦日期：<span id="pdf_assignDate"></span></div>
-                <div>陳報日期：<span id="pdf_reportDate"></span></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <!-- 左欄 -->
+                <div style="width: 33%; text-align: left; font-size: 11pt; line-height: 1.5;">
+                    <div>交辦長官：<span id="pdf_supervisor"></span></div>
+                    <div>陳報單位：<span id="pdf_reportingUnit"></span></div>
+                </div>
+                <!-- 中欄標題框 -->
+                <div style="width: 34%; text-align: center;">
+                    <div style="border: 2px solid #000; padding: 3px 10px; font-size: 18pt; font-weight: bold; letter-spacing: 3px; display: inline-block;">
+                        辦理現況速報單
+                    </div>
+                </div>
+                <!-- 右欄 -->
+                <div style="width: 33%; text-align: right; font-size: 11pt; line-height: 1.5;">
+                    <div>交辦日期：<span id="pdf_assignDate"></span></div>
+                    <div>陳報日期：<span id="pdf_reportDate"></span></div>
+                </div>
             </div>
 
             <!-- 主表格 -->
-            <table class="main-pdf-table">
-                <!-- 會議性質勾選欄 -->
+            <table class="pdf-main-table">
+                <!-- 1. 會議性質勾選 -->
                 <tr>
-                    <td style="padding: 6px 8px;">
+                    <td style="height: 48px; padding: 4px 8px;">
                         <div class="checkbox-grid-3">
                             <div><span id="chk_部次長交辦事項">□</span> 部次長交辦事項</div>
-                            <div><span id="chk_重要業務">□</span> 重要業務</div>
-                            <div><span id="chk_重要會議結論">□</span> 重要會議結論</div>
                             <div><span id="chk_首長訪視行程">□</span> 首長訪視行程</div>
+                            <div><span id="chk_重要業務">□</span> 重要業務</div>
                             <div><span id="chk_媒體受訪">□</span> 媒體受訪</div>
+                            <div><span id="chk_重要會議結論">□</span> 重要會議結論</div>
                             <div><span id="chk_其他">□</span> 其他</div>
                         </div>
                     </td>
                 </tr>
 
-                <!-- 壹、案由 -->
+                <!-- 2. 壹、案由 -->
                 <tr>
-                    <td style="padding: 8px; height: 110px;">
-                        <div class="section-title">壹、案由：</div>
-                        <div id="pdf_section1" class="section-text"></div>
+                    <td style="height: 160px;">
+                        <div class="section-header">壹、案由：</div>
+                        <div id="pdf_section1" class="section-content"></div>
                     </td>
                 </tr>
 
-                <!-- 貳、重點說明暨續辦摘要 -->
+                <!-- 3. 貳、重點說明暨續辦摘要 -->
                 <tr>
-                    <td style="padding: 8px; height: 260px;">
-                        <div class="section-title">貳、重點說明暨續辦摘要：</div>
-                        <div id="pdf_section2" class="section-text"></div>
+                    <td style="height: 280px;">
+                        <div class="section-header">貳、重點說明暨續辦摘要：</div>
+                        <div id="pdf_section2" class="section-content"></div>
                     </td>
                 </tr>
 
-                <!-- 參、擬處理意見或建議事項 -->
+                <!-- 4. 參、擬處理意見或建議事項 -->
                 <tr>
-                    <td style="padding: 8px; height: 130px;">
-                        <div class="section-title">參、擬處理意見或建議事項：</div>
-                        <div id="pdf_section3" class="section-text"></div>
+                    <td style="height: 180px;">
+                        <div class="section-header">參、擬處理意見或建議事項：</div>
+                        <div id="pdf_section3" class="section-content"></div>
                     </td>
                 </tr>
 
-                <!-- 肆、本件分送與聯絡資訊 (完美復刻原公文規格) -->
+                <!-- 5. 肆、本件分送與聯絡資訊 (完全復刻原公文規格) -->
                 <tr>
-                    <td style="padding: 8px; height: 140px;">
-                        <div class="section-title" style="margin-bottom: 6px;">本件分送（勾選）</div>
+                    <td style="height: 160px; padding: 8px;">
+                        <div class="section-header" style="margin-bottom: 6px;">本件分送（勾選）</div>
                         <div class="checkbox-grid-3" style="margin-bottom: 6px;">
                             <div><span id="pdf_unit_署長辦公室">□</span> 署長辦公室</div>
                             <div><span id="pdf_unit_王副署長辦公室">□</span> 王副署長辦公室</div>
@@ -259,29 +269,31 @@
                             <div><span id="pdf_unit_總工程司室">□</span> 總工程司室</div>
                             <div><span id="pdf_unit_主任秘書室">□</span> 主任秘書室</div>
                         </div>
-                        <div style="font-size: 12pt; margin-bottom: 12px;">
+                        <div style="font-size: 11pt; margin-bottom: 8px;">
                             <span id="pdf_unit_other_chk">□</span> 其他單位：<span id="pdf_otherUnit"></span>
                         </div>
-                        <div style="font-size: 12pt; line-height: 1.6;">
+                        <hr style="border: 0; border-top: 1px solid #000; margin: 6px 0 8px 0;">
+                        <div style="font-size: 11pt; line-height: 1.6;">
                             <div>本案聯絡人：<span id="pdf_contactPerson"></span></div>
                             <div>聯絡電話：<span id="pdf_contactPhone"></span></div>
                         </div>
                     </td>
                 </tr>
             </table>
+
         </div>
     </div>
 
     <!-- JavaScript 控制邏輯 -->
     <script>
-        // 初始化今天日期
+        // 初始化日期為今天
         document.addEventListener('DOMContentLoaded', () => {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('assignDate').value = today;
             document.getElementById('reportDate').value = today;
         });
 
-        // 西元轉民國年格式 (例如: 2026-10-03 -> 115年10月3日)
+        // 西元轉民國年格式 (例如: 2026-09-17 -> 115年9月17日)
         function formatRocDate(dateStr) {
             if (!dateStr) return '';
             const d = new Date(dateStr);
@@ -311,7 +323,7 @@
             alert('草稿已成功暫存！');
         }
 
-        // 載入暫存資料
+        // 從 localStorage 載入資料
         function loadDraft() {
             const draft = localStorage.getItem('express_draft');
             if (!draft) {
@@ -337,9 +349,9 @@
             alert('資料已成功載入！');
         }
 
-        // 核心 PDF 產出邏輯 (完美標楷體 + A4 單頁不割裂)
+        // 核心 PDF 產出邏輯 (100% 標楷體 + 完美 1:1 單頁 A4 重現)
         async function generatePDF() {
-            // 1. 填入資料至 PDF 範本
+            // 1. 同步數據至 PDF 範本
             document.getElementById('pdf_supervisor').innerText = document.getElementById('supervisor').value;
             document.getElementById('pdf_reportingUnit').innerText = document.getElementById('reportingUnit').value;
             document.getElementById('pdf_assignDate').innerText = formatRocDate(document.getElementById('assignDate').value);
@@ -371,10 +383,10 @@
             document.getElementById('pdf_otherUnit').innerText = otherVal;
             document.getElementById('pdf_unit_other_chk').innerText = otherVal.trim() !== '' ? '■' : '□';
 
-            // 2. 確保網頁字型 (LXGW WenKai TC 標楷體) 已完全下載解析
+            // 2. 等候雲端標楷體 (LXGW WenKai TC) 徹底下載完畢，確保轉檔時不會退回預設黑體
             await document.fonts.ready;
 
-            // 3. 轉檔選項設定
+            // 3. 轉檔參數 (A4  portrait 滿頁不切割)
             const element = document.getElementById('pdfRenderTemplate');
             const opt = {
                 margin:       0,
@@ -384,13 +396,13 @@
                     scale: 2, 
                     useCORS: true,
                     logging: false,
-                    windowWidth: 794
+                    windowWidth: 794 // 對應 A4 標準像素寬度
                 },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
                 pagebreak:    { mode: 'avoid-all' }
             };
 
-            // 4. 執行轉檔與下載
+            // 4. 觸發下載
             await html2pdf().set(opt).from(element).save();
         }
     </script>
