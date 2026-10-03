@@ -9,50 +9,74 @@
     <!-- html2pdf.js CDN (HTML 轉 PDF 核心庫) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        /* 引入 Google Fonts 雲端標準繁體楷體 (解決手機沒有標楷體的問題) */
-        @import url('https://fonts.googleapis.com/earlyaccess/cwtexkai.css');
+        /* 引入 Google 官方繁體楷體 (霞鶩文楷 / 標楷體最佳替代方案) */
         @import url('https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&display=swap');
 
-        /* A4 列印範本樣式 (符合水利署公文速報單格式) */
-        .a4-container {
-            width: 210mm;
-            min-height: 297mm;
-            padding: 15mm;
-            margin: auto;
-            background: white;
-            /* 優先調用本機標楷體，手機端則使用雲端楷體 */
-            font-family: "DFKai-SB", "標楷體", "BiauKai", "cwTeXKai", "LXGW WenKai TC", "TW-Kai", serif;
-            color: #000;
+        /* 萬用字元設定：強制 PDF 範本內所有文字與符號均使用標楷體 */
+        #pdfRenderTemplate, #pdfRenderTemplate * {
+            font-family: "LXGW WenKai TC", "DFKai-SB", "標楷體", "BiauKai", serif !important;
             box-sizing: border-box;
         }
-        .pdf-table {
+
+        /* 嚴格鎖定 A4 單頁尺寸 (210mm x 295mm)，防溢頁與裁切 */
+        .a4-template {
+            width: 210mm;
+            height: 295mm;
+            padding: 12mm 15mm;
+            background: #ffffff;
+            color: #000000;
+            font-size: 13pt;
+            line-height: 1.5;
+            box-sizing: border-box;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        /* 主表格樣式 */
+        .main-pdf-table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
+            border: 1px solid #000000;
         }
-        .pdf-table th, .pdf-table td {
-            border: 1px solid black;
-            padding: 6px 8px;
-            font-size: 14pt;
-            line-height: 1.6;
+
+        .main-pdf-table td {
+            border: 1px solid #000000;
             vertical-align: top;
+            word-break: break-all;
         }
-        .checkbox-symbol {
-            font-family: sans-serif;
+
+        /* 勾選項目多欄網格 */
+        .checkbox-grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            font-size: 12pt;
+        }
+
+        /* 標題與內文區塊 */
+        .section-title {
             font-weight: bold;
-            display: inline-block;
-            width: 14px;
+            font-size: 13pt;
+            margin-bottom: 4px;
+        }
+
+        .section-text {
+            white-space: pre-wrap;
+            font-size: 12pt;
+            line-height: 1.6;
         }
     </style>
 </head>
 <body class="bg-sky-100 min-h-screen pb-10">
 
-    <!-- 手機端操作介面 -->
+    <!-- 手機端操作介面 (畫面一) -->
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-md p-4 flex flex-col gap-4">
         
         <!-- 標題欄 -->
         <div class="border-b-2 border-sky-600 pb-2">
             <h1 class="text-2xl font-bold text-sky-900 text-center">
-                速報單填報系統 <span class="text-xs font-normal text-emerald-600 border border-emerald-500 rounded px-1">v2.8.2-PWA-Fix</span>
+                速報單填報系統 <span class="text-xs font-normal text-emerald-600 border border-emerald-500 rounded px-1">v3.0-PerfectA4</span>
             </h1>
         </div>
 
@@ -138,11 +162,11 @@
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label class="block font-bold text-gray-700 mb-1">本案聯絡人</label>
-                    <input type="text" id="contactPerson" class="w-full border rounded-lg p-2 bg-gray-50 text-sm" placeholder="單位/職稱/姓名">
+                    <input type="text" id="contactPerson" class="w-full border rounded-lg p-2 bg-gray-50 text-sm" placeholder="土地管理組/科長/梁顥懷">
                 </div>
                 <div>
                     <label class="block font-bold text-gray-700 mb-1">聯絡電話</label>
-                    <input type="text" id="contactPhone" class="w-full border rounded-lg p-2 bg-gray-50 text-sm" placeholder="09xx-xxx-xxx">
+                    <input type="text" id="contactPhone" class="w-full border rounded-lg p-2 bg-gray-50 text-sm" placeholder="0928284556">
                 </div>
             </div>
 
@@ -157,91 +181,88 @@
                 <button type="button" onclick="generatePDF()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-4 rounded-lg shadow flex items-center justify-center gap-1">
                     📄 產出 PDF
                 </button>
-                <button type="button" onclick="alert('Word功能擴充預留')" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 px-4 rounded-lg shadow flex items-center justify-center gap-1">
+                <button type="button" onclick="alert('Word功能預留')" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 px-4 rounded-lg shadow flex items-center justify-center gap-1">
                     📝 產出 Word
                 </button>
             </div>
         </form>
     </div>
 
-    <!-- 隱藏的 A4 PDF 輸出渲染區塊 -->
-    <div class="hidden">
-        <div id="pdfRenderTemplate" class="a4-container">
-            <!-- 頂部單位與文件標題 -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
-                <div style="font-size: 20px; font-weight: bold;">經濟部水利署</div>
-                <div style="border: 2px solid black; padding: 4px 12px; font-size: 22px; font-weight: bold; letter-spacing: 2px;">
+    <!-- PDF 暫存渲染區塊 (預設隱藏) -->
+    <div id="pdfRenderContainer" style="position: absolute; left: -9999px; top: -9999px;">
+        <div id="pdfRenderTemplate" class="a4-template">
+            <!-- 頂部欄位 -->
+            <div style="font-size: 16pt; font-weight: bold; margin-bottom: 2px;">經濟部水利署</div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div style="font-size: 12pt;">交辦長官：<span id="pdf_supervisor"></span></div>
+                <div style="font-size: 18pt; font-weight: bold; border: 1.5px solid #000; padding: 2px 12px; letter-spacing: 2px;">
                     辦理現況速報單
                 </div>
+                <div style="font-size: 12pt;">陳報單位：<span id="pdf_reportingUnit"></span></div>
             </div>
 
-            <!-- 交辦資訊 -->
-            <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px;">
-                <div>交辦長官：<span id="pdf_supervisor"></span></div>
-                <div>陳報單位：<span id="pdf_reportingUnit"></span></div>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; font-size: 12pt; margin-bottom: 8px;">
                 <div>交辦日期：<span id="pdf_assignDate"></span></div>
                 <div>陳報日期：<span id="pdf_reportDate"></span></div>
             </div>
 
             <!-- 主表格 -->
-            <table class="pdf-table">
-                <!-- 會議性質勾選區 -->
+            <table class="main-pdf-table">
+                <!-- 會議性質勾選欄 -->
                 <tr>
-                    <td colspan="2" style="padding: 6px;">
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 13px;">
-                            <div><span id="chk_部次長交辦事項" class="checkbox-symbol">□</span> 部次長交辦事項</div>
-                            <div><span id="chk_重要業務" class="checkbox-symbol">□</span> 重要業務</div>
-                            <div><span id="chk_重要會議結論" class="checkbox-symbol">□</span> 重要會議結論</div>
-                            <div><span id="chk_首長訪視行程" class="checkbox-symbol">□</span> 首長訪視行程</div>
-                            <div><span id="chk_媒體受訪" class="checkbox-symbol">□</span> 媒體受訪</div>
-                            <div><span id="chk_其他" class="checkbox-symbol">□</span> 其他</div>
+                    <td style="padding: 6px 8px;">
+                        <div class="checkbox-grid-3">
+                            <div><span id="chk_部次長交辦事項">□</span> 部次長交辦事項</div>
+                            <div><span id="chk_重要業務">□</span> 重要業務</div>
+                            <div><span id="chk_重要會議結論">□</span> 重要會議結論</div>
+                            <div><span id="chk_首長訪視行程">□</span> 首長訪視行程</div>
+                            <div><span id="chk_媒體受訪">□</span> 媒體受訪</div>
+                            <div><span id="chk_其他">□</span> 其他</div>
                         </div>
                     </td>
                 </tr>
 
                 <!-- 壹、案由 -->
                 <tr>
-                    <td style="width: 100%; min-height: 100px;">
-                        <div style="font-weight: bold; margin-bottom: 4px;">壹、案由：</div>
-                        <div id="pdf_section1" style="white-space: pre-wrap; font-size: 13px; min-height: 80px;"></div>
+                    <td style="padding: 8px; height: 110px;">
+                        <div class="section-title">壹、案由：</div>
+                        <div id="pdf_section1" class="section-text"></div>
                     </td>
                 </tr>
 
                 <!-- 貳、重點說明暨續辦摘要 -->
                 <tr>
-                    <td style="width: 100%; min-height: 180px;">
-                        <div style="font-weight: bold; margin-bottom: 4px;">貳、重點說明暨續辦摘要：</div>
-                        <div id="pdf_section2" style="white-space: pre-wrap; font-size: 13px; min-height: 160px;"></div>
+                    <td style="padding: 8px; height: 260px;">
+                        <div class="section-title">貳、重點說明暨續辦摘要：</div>
+                        <div id="pdf_section2" class="section-text"></div>
                     </td>
                 </tr>
 
                 <!-- 參、擬處理意見或建議事項 -->
                 <tr>
-                    <td style="width: 100%; min-height: 120px;">
-                        <div style="font-weight: bold; margin-bottom: 4px;">參、擬處理意見或建議事項：</div>
-                        <div id="pdf_section3" style="white-space: pre-wrap; font-size: 13px; min-height: 100px;"></div>
+                    <td style="padding: 8px; height: 130px;">
+                        <div class="section-title">參、擬處理意見或建議事項：</div>
+                        <div id="pdf_section3" class="section-text"></div>
                     </td>
                 </tr>
 
-                <!-- 肆、本件分送與聯絡資訊 -->
+                <!-- 肆、本件分送與聯絡資訊 (完美復刻原公文規格) -->
                 <tr>
-                    <td style="padding: 8px;">
-                        <div style="font-weight: bold; margin-bottom: 6px;">本件分送 (勾選)</div>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 13px; margin-bottom: 8px;">
-                            <div><span id="pdf_unit_署長辦公室" class="checkbox-symbol">□</span> 署長辦公室</div>
-                            <div><span id="pdf_unit_王副署長辦公室" class="checkbox-symbol">□</span> 王副署長辦公室</div>
-                            <div><span id="pdf_unit_黃副署長辦公室" class="checkbox-symbol">□</span> 黃副署長辦公室</div>
-                            <div><span id="pdf_unit_陳副署長辦公室" class="checkbox-symbol">□</span> 陳副署長辦公室</div>
-                            <div><span id="pdf_unit_總工程司室" class="checkbox-symbol">□</span> 總工程司室</div>
-                            <div><span id="pdf_unit_主任秘書室" class="checkbox-symbol">□</span> 主任秘書室</div>
+                    <td style="padding: 8px; height: 140px;">
+                        <div class="section-title" style="margin-bottom: 6px;">本件分送（勾選）</div>
+                        <div class="checkbox-grid-3" style="margin-bottom: 6px;">
+                            <div><span id="pdf_unit_署長辦公室">□</span> 署長辦公室</div>
+                            <div><span id="pdf_unit_王副署長辦公室">□</span> 王副署長辦公室</div>
+                            <div><span id="pdf_unit_黃副署長辦公室">□</span> 黃副署長辦公室</div>
+                            <div><span id="pdf_unit_陳副署長辦公室">□</span> 陳副署長辦公室</div>
+                            <div><span id="pdf_unit_總工程司室">□</span> 總工程司室</div>
+                            <div><span id="pdf_unit_主任秘書室">□</span> 主任秘書室</div>
                         </div>
-                        <div style="font-size: 13px; margin-bottom: 12px;">
-                            <span id="pdf_unit_other_chk" class="checkbox-symbol">□</span> 其他單位：<span id="pdf_otherUnit" style="text-decoration: underline;"></span>
+                        <div style="font-size: 12pt; margin-bottom: 12px;">
+                            <span id="pdf_unit_other_chk">□</span> 其他單位：<span id="pdf_otherUnit"></span>
                         </div>
-                        <hr style="border: 0.5px solid #000; margin: 6px 0;">
-                        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                        <div style="font-size: 12pt; line-height: 1.6;">
                             <div>本案聯絡人：<span id="pdf_contactPerson"></span></div>
                             <div>聯絡電話：<span id="pdf_contactPhone"></span></div>
                         </div>
@@ -251,16 +272,16 @@
         </div>
     </div>
 
-    <!-- JavaScript 邏輯控制 -->
+    <!-- JavaScript 控制邏輯 -->
     <script>
-        // 初始化日期為今天
+        // 初始化今天日期
         document.addEventListener('DOMContentLoaded', () => {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('assignDate').value = today;
             document.getElementById('reportDate').value = today;
         });
 
-        // 西元轉民國年格式 (例如: 2026-09-17 -> 115年9月17日)
+        // 西元轉民國年格式 (例如: 2026-10-03 -> 115年10月3日)
         function formatRocDate(dateStr) {
             if (!dateStr) return '';
             const d = new Date(dateStr);
@@ -290,7 +311,7 @@
             alert('草稿已成功暫存！');
         }
 
-        // 從 localStorage 載入資料
+        // 載入暫存資料
         function loadDraft() {
             const draft = localStorage.getItem('express_draft');
             if (!draft) {
@@ -310,16 +331,15 @@
             document.getElementById('contactPerson').value = data.contactPerson || '';
             document.getElementById('contactPhone').value = data.contactPhone || '';
 
-            // 勾選框載入
             document.querySelectorAll('input[name="dispatchUnit"]').forEach(cb => {
                 cb.checked = data.dispatchUnits ? data.dispatchUnits.includes(cb.value) : false;
             });
             alert('資料已成功載入！');
         }
 
-        // 核心功能：產出標楷體 PDF 檔案
-        function generatePDF() {
-            // 1. 同步數據至 PDF 範本
+        // 核心 PDF 產出邏輯 (完美標楷體 + A4 單頁不割裂)
+        async function generatePDF() {
+            // 1. 填入資料至 PDF 範本
             document.getElementById('pdf_supervisor').innerText = document.getElementById('supervisor').value;
             document.getElementById('pdf_reportingUnit').innerText = document.getElementById('reportingUnit').value;
             document.getElementById('pdf_assignDate').innerText = formatRocDate(document.getElementById('assignDate').value);
@@ -332,37 +352,46 @@
             document.getElementById('pdf_contactPerson').innerText = document.getElementById('contactPerson').value;
             document.getElementById('pdf_contactPhone').innerText = document.getElementById('contactPhone').value;
 
-            // 2. 更新會議性質勾選狀態
+            // 會議性質勾選 (■ 實心/ □ 空心)
             const mType = document.getElementById('meetingType').value;
             ['部次長交辦事項', '重要業務', '重要會議結論', '首長訪視行程', '媒體受訪', '其他'].forEach(type => {
                 const el = document.getElementById(`chk_${type}`);
                 if (el) el.innerText = (type === mType) ? '■' : '□';
             });
 
-            // 3. 更新分送單位勾選狀態
+            // 本件分送勾選
             const selectedUnits = Array.from(document.querySelectorAll('input[name="dispatchUnit"]:checked')).map(cb => cb.value);
             ['署長辦公室', '王副署長辦公室', '黃副署長辦公室', '陳副署長辦公室', '總工程司室', '主任秘書室'].forEach(unit => {
                 const el = document.getElementById(`pdf_unit_${unit}`);
                 if (el) el.innerText = selectedUnits.includes(unit) ? '■' : '□';
             });
 
-            // 其他單位處理
+            // 其他單位
             const otherVal = document.getElementById('otherUnit').value;
             document.getElementById('pdf_otherUnit').innerText = otherVal;
             document.getElementById('pdf_unit_other_chk').innerText = otherVal.trim() !== '' ? '■' : '□';
 
-            // 4. 執行 PDF 下載
+            // 2. 確保網頁字型 (LXGW WenKai TC 標楷體) 已完全下載解析
+            await document.fonts.ready;
+
+            // 3. 轉檔選項設定
             const element = document.getElementById('pdfRenderTemplate');
             const opt = {
                 margin:       0,
                 filename:     `速報單_${formatRocDate(document.getElementById('reportDate').value)}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                image:        { type: 'jpeg', quality: 1.0 },
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true,
+                    logging: false,
+                    windowWidth: 794
+                },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: 'avoid-all' }
             };
 
-            // 產生並下載 PDF
-            html2pdf().set(opt).from(element).save();
+            // 4. 執行轉檔與下載
+            await html2pdf().set(opt).from(element).save();
         }
     </script>
 </body>
