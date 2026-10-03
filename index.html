@@ -9,20 +9,25 @@
     <!-- html2pdf.js CDN (HTML 轉 PDF 核心庫) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        /* 引入 Google 官方高解析度繁體楷體 (標楷體雲端標準字型) */
+        /* 引入 Google 官方高解析繁體楷體 (雲端標楷體標準) */
         @import url('https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&display=swap');
 
-        /* 全域設定：強制 PDF 範本內所有文字均使用標楷體 */
+        @font-face {
+            font-family: 'BiauKaiLocal';
+            src: local('DFKai-SB'), local('標楷體'), local('BiauKai'), local('Kaiti TC'), local('KaiTi');
+        }
+
+        /* 萬用字元設定：強制 PDF 範本內所有文字與符號均使用標楷體 */
         .a4-container, .a4-container * {
-            font-family: "LXGW WenKai TC", "DFKai-SB", "標楷體", "BiauKai", serif !important;
+            font-family: 'BiauKaiLocal', 'LXGW WenKai TC', 'DFKai-SB', '標楷體', 'BiauKai', serif !important;
             box-sizing: border-box;
         }
 
-        /* 嚴格鎖定 A4 單頁規格 (210mm x 297mm)，徹底防止溢頁 */
+        /* 嚴格鎖定 A4 單頁規格 (210mm x 295mm)，徹底防止溢頁 */
         .a4-container {
             width: 210mm;
-            height: 297mm;
-            padding: 12mm 15mm;
+            height: 295mm;
+            padding: 10mm 12mm;
             background: #ffffff;
             color: #000000;
             box-sizing: border-box;
@@ -41,12 +46,21 @@
         .pdf-main-table td {
             border: 1.5px solid #000000;
             vertical-align: top;
-            padding: 6px 8px;
+            padding: 5px 8px;
             word-break: break-all;
         }
 
-        /* 勾選項目多欄網格 */
-        .checkbox-grid-3 {
+        /* 會議性質 2 欄對齊 */
+        .meeting-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 12px;
+            font-size: 11pt;
+            line-height: 1.5;
+        }
+
+        /* 分送單位 3 欄網格 */
+        .dispatch-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 4px;
@@ -76,7 +90,7 @@
         <!-- 標題欄 -->
         <div class="border-b-2 border-sky-600 pb-2">
             <h1 class="text-2xl font-bold text-sky-900 text-center">
-                速報單填報系統 <span class="text-xs font-normal text-emerald-600 border border-emerald-500 rounded px-1">v3.2-ExactA4</span>
+                速報單填報系統 <span class="text-xs font-normal text-emerald-600 border border-emerald-500 rounded px-1">v4.0-Final</span>
             </h1>
         </div>
 
@@ -89,7 +103,7 @@
                 <select id="meetingType" class="w-full border rounded-lg p-2.5 bg-gray-50 focus:ring-2 focus:ring-sky-500">
                     <option value="部次長交辦事項">部次長交辦事項</option>
                     <option value="重要業務">重要業務</option>
-                    <option value="重要會議結論">重要會議結論</option>
+                    <option value="重要會議結論" selected>重要會議結論</option>
                     <option value="首長訪視行程">首長訪視行程</option>
                     <option value="媒體受訪">媒體受訪</option>
                     <option value="其他">其他</option>
@@ -123,10 +137,11 @@
             <!-- 壹、案由 -->
             <div>
                 <label class="block font-bold text-gray-700 mb-1">壹、案由</label>
-                <textarea id="section1" rows="4" class="w-full border rounded-lg p-2 bg-gray-50 text-sm">一、開會時間：115年9月17日(四)下午15:30
+                <textarea id="section1" rows="4" class="w-full border rounded-lg p-2 bg-gray-50 text-sm">一、開會時間：2026年9月17日(四)下午15:30
 二、開會地點：立法委員伍麗華國會辦公室
 三、主持人：曾巧忻主任
-四、與會人員：行政院公共工程委員會洪簡任技正彥斌、水利署陳副總工程司春宏、梁科長顥懷、第九河川分署李科長秀芳、莊聘用工程司宇</textarea>
+四、與會人員：
+行政院公共工程委員會洪簡任技正彥斌、水利署陳副總工程司春宏、梁科長顥懷、第九河川分署李科長秀芳、莊聘用工程司宇</textarea>
             </div>
 
             <!-- 貳、重點說明暨續辦摘要 -->
@@ -189,29 +204,23 @@
         </form>
     </div>
 
-    <!-- 離屏渲染 A4 PDF 範本 (完全復刻水利署速報單 1:1 格式) -->
-    <div style="position: absolute; left: -9999px; top: 0;">
+    <!-- 預載與捕捉專用 A4 PDF 範本 (固定於視窗背景，確保字型與截圖 100% 準確) -->
+    <div style="position: fixed; top: 0; left: 0; width: 210mm; height: 295mm; z-index: -9999; opacity: 0; pointer-events: none; background: #ffffff;">
         <div id="pdfRenderTemplate" class="a4-container">
             
-            <!-- 頂部標題區域 -->
-            <div style="text-align: center; font-size: 16pt; font-weight: bold; letter-spacing: 2px; margin-bottom: 2px;">
-                經濟部水利署
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <!-- 左欄 -->
-                <div style="width: 33%; text-align: left; font-size: 11pt; line-height: 1.5;">
-                    <div>交辦長官：<span id="pdf_supervisor"></span></div>
-                    <div>陳報單位：<span id="pdf_reportingUnit"></span></div>
+            <!-- 頂部標題與表頭區域 (完美復刻 1150917 格式) -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                <!-- 左欄：署名與單位 -->
+                <div style="font-size: 11pt; line-height: 1.6; font-weight: bold;">
+                    <div style="font-size: 16pt; margin-bottom: 2px;">經濟部水利署</div>
+                    <div>交辦長官：<span id="pdf_supervisor" style="font-weight: normal;"></span></div>
+                    <div>陳報單位：<span id="pdf_reportingUnit" style="font-weight: normal;"></span></div>
                 </div>
-                <!-- 中欄標題框 -->
-                <div style="width: 34%; text-align: center;">
-                    <div style="border: 2px solid #000; padding: 3px 10px; font-size: 18pt; font-weight: bold; letter-spacing: 3px; display: inline-block;">
+                <!-- 右欄：速報單框與日期 -->
+                <div style="text-align: right; font-size: 11pt; line-height: 1.6;">
+                    <div style="display: inline-block; border: 2px solid #000; padding: 2px 14px; font-size: 18pt; font-weight: bold; letter-spacing: 3px; margin-bottom: 4px;">
                         辦理現況速報單
                     </div>
-                </div>
-                <!-- 右欄 -->
-                <div style="width: 33%; text-align: right; font-size: 11pt; line-height: 1.5;">
                     <div>交辦日期：<span id="pdf_assignDate"></span></div>
                     <div>陳報日期：<span id="pdf_reportDate"></span></div>
                 </div>
@@ -219,15 +228,15 @@
 
             <!-- 主表格 -->
             <table class="pdf-main-table">
-                <!-- 1. 會議性質勾選 -->
+                <!-- 1. 會議性質勾選 (2 欄精準佈局) -->
                 <tr>
-                    <td style="height: 48px; padding: 4px 8px;">
-                        <div class="checkbox-grid-3">
+                    <td style="height: 52px; padding: 4px 8px;">
+                        <div class="meeting-grid">
                             <div><span id="chk_部次長交辦事項">□</span> 部次長交辦事項</div>
-                            <div><span id="chk_首長訪視行程">□</span> 首長訪視行程</div>
                             <div><span id="chk_重要業務">□</span> 重要業務</div>
-                            <div><span id="chk_媒體受訪">□</span> 媒體受訪</div>
                             <div><span id="chk_重要會議結論">□</span> 重要會議結論</div>
+                            <div><span id="chk_首長訪視行程">□</span> 首長訪視行程</div>
+                            <div><span id="chk_媒體受訪">□</span> 媒體受訪</div>
                             <div><span id="chk_其他">□</span> 其他</div>
                         </div>
                     </td>
@@ -243,7 +252,7 @@
 
                 <!-- 3. 貳、重點說明暨續辦摘要 -->
                 <tr>
-                    <td style="height: 280px;">
+                    <td style="height: 290px;">
                         <div class="section-header">貳、重點說明暨續辦摘要：</div>
                         <div id="pdf_section2" class="section-content"></div>
                     </td>
@@ -251,17 +260,17 @@
 
                 <!-- 4. 參、擬處理意見或建議事項 -->
                 <tr>
-                    <td style="height: 180px;">
+                    <td style="height: 170px;">
                         <div class="section-header">參、擬處理意見或建議事項：</div>
                         <div id="pdf_section3" class="section-content"></div>
                     </td>
                 </tr>
 
-                <!-- 5. 肆、本件分送與聯絡資訊 (完全復刻原公文規格) -->
+                <!-- 5. 肆、本件分送與聯絡資訊 (100% 復刻原公文底欄) -->
                 <tr>
-                    <td style="height: 160px; padding: 8px;">
-                        <div class="section-header" style="margin-bottom: 6px;">本件分送（勾選）</div>
-                        <div class="checkbox-grid-3" style="margin-bottom: 6px;">
+                    <td style="height: 150px; padding: 6px 8px;">
+                        <div class="section-header" style="margin-bottom: 4px;">本件分送（勾選）</div>
+                        <div class="dispatch-grid" style="margin-bottom: 4px;">
                             <div><span id="pdf_unit_署長辦公室">□</span> 署長辦公室</div>
                             <div><span id="pdf_unit_王副署長辦公室">□</span> 王副署長辦公室</div>
                             <div><span id="pdf_unit_黃副署長辦公室">□</span> 黃副署長辦公室</div>
@@ -269,11 +278,11 @@
                             <div><span id="pdf_unit_總工程司室">□</span> 總工程司室</div>
                             <div><span id="pdf_unit_主任秘書室">□</span> 主任秘書室</div>
                         </div>
-                        <div style="font-size: 11pt; margin-bottom: 8px;">
+                        <div style="font-size: 11pt; margin-bottom: 6px;">
                             <span id="pdf_unit_other_chk">□</span> 其他單位：<span id="pdf_otherUnit"></span>
                         </div>
-                        <hr style="border: 0; border-top: 1px solid #000; margin: 6px 0 8px 0;">
-                        <div style="font-size: 11pt; line-height: 1.6;">
+                        <hr style="border: 0; border-top: 1px solid #000; margin: 4px 0 6px 0;">
+                        <div style="font-size: 11pt; line-height: 1.5;">
                             <div>本案聯絡人：<span id="pdf_contactPerson"></span></div>
                             <div>聯絡電話：<span id="pdf_contactPhone"></span></div>
                         </div>
@@ -286,7 +295,7 @@
 
     <!-- JavaScript 控制邏輯 -->
     <script>
-        // 初始化日期為今天
+        // 初始化日期為今天 (格式: YYYY-MM-DD)
         document.addEventListener('DOMContentLoaded', () => {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('assignDate').value = today;
@@ -349,7 +358,7 @@
             alert('資料已成功載入！');
         }
 
-        // 核心 PDF 產出邏輯 (100% 標楷體 + 完美 1:1 單頁 A4 重現)
+        // 核心 PDF 產出邏輯 (100% 標楷體 + 單頁 A4 不溢頁重現)
         async function generatePDF() {
             // 1. 同步數據至 PDF 範本
             document.getElementById('pdf_supervisor').innerText = document.getElementById('supervisor').value;
@@ -378,31 +387,33 @@
                 if (el) el.innerText = selectedUnits.includes(unit) ? '■' : '□';
             });
 
-            // 其他單位
+            // 其他單位處理
             const otherVal = document.getElementById('otherUnit').value;
             document.getElementById('pdf_otherUnit').innerText = otherVal;
             document.getElementById('pdf_unit_other_chk').innerText = otherVal.trim() !== '' ? '■' : '□';
 
-            // 2. 等候雲端標楷體 (LXGW WenKai TC) 徹底下載完畢，確保轉檔時不會退回預設黑體
+            // 2. 等候雲端字型 100% 下載完畢
             await document.fonts.ready;
 
-            // 3. 轉檔參數 (A4  portrait 滿頁不切割)
+            // 3. 轉檔參數設定 (嚴格單頁 A4，防止頁面裁切與溢頁)
             const element = document.getElementById('pdfRenderTemplate');
             const opt = {
                 margin:       0,
                 filename:     `速報單_${formatRocDate(document.getElementById('reportDate').value)}.pdf`,
                 image:        { type: 'jpeg', quality: 1.0 },
                 html2canvas:  { 
-                    scale: 2, 
+                    scale: 3, 
                     useCORS: true,
                     logging: false,
-                    windowWidth: 794 // 對應 A4 標準像素寬度
+                    scrollX: 0,
+                    scrollY: 0,
+                    windowWidth: 794
                 },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak:    { mode: 'avoid-all' }
+                pagebreak:    { mode: '' }
             };
 
-            // 4. 觸發下載
+            // 4. 觸發轉檔與下載
             await html2pdf().set(opt).from(element).save();
         }
     </script>
